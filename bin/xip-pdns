@@ -85,6 +85,7 @@ qname_is_root_domain() {
 extract_subdomain_from_qname() {
   SUBDOMAIN="${QNAME:0:${#QNAME}-${#XIP_DOMAIN}}"
   SUBDOMAIN="${SUBDOMAIN%.}"
+  SUBDOMAIN=$(echo "${SUBDOMAIN}" | sed 's/\([0-9]\+\)-\([0-9]\+\)-\([0-9]\+\)-\([0-9]\)/\1.\2.\3.\4/')
 }
 
 subdomain_is_ns() {
