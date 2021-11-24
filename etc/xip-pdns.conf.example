@@ -13,3 +13,7 @@ XIP_NS_ADDRESSES=( "1.2.3.4" "1.2.3.5" )
 
 # How long responses should be cached, in seconds.
 XIP_TTL=300
+
+# key = entire domain, value = TXT record data
+# e.g. TXT_RECORDS["mysubdomain.example.com"]="aGVsbG8gZnJvbSB2aXZpIQ"
+declare -A TXT_RECORDS
