@@ -94,7 +94,7 @@ subdomain_is_ns() {
 }
 
 subdomain_is_local_ip() {
-  [[ "$SUBDOMAIN" =~ $LOCAL_IP_SUBDOMAIN_PATTERN ]]
+  [[ "$SUBDOMAIN" =~ $IP_SUBDOMAIN_PATTERN && "$SUBDOMAIN" =~ $LOCAL_IP_SUBDOMAIN_PATTERN ]]
 }
 
 subdomain_is_base36() {
