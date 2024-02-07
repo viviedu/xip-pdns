@@ -145,7 +145,7 @@ answer_subdomain_a_query_for() {
   fi
 }
 
-answer_subdomain_txt_query() {
+answer_txt_query() {
   send_answer "TXT" "${TXT_RECORDS["${QNAME}"]}"
 }
 
@@ -165,14 +165,12 @@ while read_query; do
   if qname_is_root_domain; then
     if qtype_is "SOA"; then
       answer_soa_query
-    fi
-
-    if qtype_is "NS"; then
+    elif qtype_is "NS"; then
       answer_ns_query
-    fi
-
-    if qtype_is "A"; then
+    elif qtype_is "A"; then
       answer_root_a_query
+    elif [[ ! -z "${TXT_RECORDS["${QNAME}"]:-}" ]]; then
+      answer_txt_query
     fi
   elif qtype_is "ANY"; then
     extract_subdomain_from_qname
@@ -184,7 +182,7 @@ while read_query; do
     elif subdomain_is_base36; then
       answer_subdomain_a_query_for base36
     elif [[ ! -z "${TXT_RECORDS["${QNAME}"]:-}" ]]; then
-      answer_subdomain_txt_query
+      answer_txt_query
     fi
   fi
 
