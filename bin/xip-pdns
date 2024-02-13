@@ -75,13 +75,14 @@ qtype_is() {
   [ "$QTYPE" = "$1" ] || [ "$QTYPE" = "ANY" ]
 }
 
-qname_is_root_domain() {
-  [ "$QNAME" = "$ROOT_DOMAIN" ]
+qname_is_rootish() {
+  [[ "$QNAME" =~ $ROOTISH_DOMAIN_PATTERN ]]
 }
 
 extract_root_domain_from_qname()
 {
   ROOT_DOMAIN=$(echo "${QNAME}" | sed 's/^.*\.\(.*\..*\)/\1/')
+  ROOTISH_DOMAIN_PATTERN="^(www\.)?${ROOT_DOMAIN}\$"
 }
 
 extract_subdomain_from_qname() {
@@ -137,6 +138,12 @@ answer_root_a_query() {
   done
 }
 
+answer_rootish_any_query() {
+  if [ -n "$ROOTISH_CNAME_ADDRESS" ]; then
+    send_answer "CNAME" "$ROOTISH_CNAME_ADDRESS"
+  fi
+}
+
 answer_subdomain_a_query_for() {
   local type="$1"
   local address="$(resolve_${type}_subdomain)"
@@ -162,8 +169,10 @@ while read_query; do
 
   extract_root_domain_from_qname
 
-  if qname_is_root_domain; then
-    if qtype_is "SOA"; then
+  if qname_is_rootish; then
+    if qtype_is "ANY"; then
+      answer_rootish_any_query
+    elif qtype_is "SOA"; then
       answer_soa_query
     elif qtype_is "NS"; then
       answer_ns_query
