@@ -75,14 +75,13 @@ qtype_is() {
   [ "$QTYPE" = "$1" ] || [ "$QTYPE" = "ANY" ]
 }
 
-qname_is_rootish() {
-  [[ "$QNAME" =~ $ROOTISH_DOMAIN_PATTERN ]]
+qname_is_root_domain() {
+  [ "$QNAME" = "$ROOT_DOMAIN" ]
 }
 
 extract_root_domain_from_qname()
 {
   ROOT_DOMAIN=$(echo "${QNAME}" | sed 's/^.*\.\(.*\..*\)/\1/')
-  ROOTISH_DOMAIN_PATTERN="^(www\.)?${ROOT_DOMAIN}\$"
 }
 
 extract_subdomain_from_qname() {
@@ -138,12 +137,6 @@ answer_root_a_query() {
   done
 }
 
-answer_rootish_any_query() {
-  if [ -n "$ROOTISH_CNAME_ADDRESS" ]; then
-    send_answer "CNAME" "$ROOTISH_CNAME_ADDRESS"
-  fi
-}
-
 answer_subdomain_a_query_for() {
   local type="$1"
   local address="$(resolve_${type}_subdomain)"
@@ -154,6 +147,10 @@ answer_subdomain_a_query_for() {
 
 answer_txt_query() {
   send_answer "TXT" "${TXT_RECORDS["${QNAME}"]}"
+}
+
+answer_cname_query() {
+  send_answer "CNAME" "${CNAME_RECORDS["${QNAME}"]}"
 }
 
 
@@ -169,9 +166,12 @@ while read_query; do
 
   extract_root_domain_from_qname
 
-  if qname_is_rootish; then
-    if qtype_is "ANY"; then
-      answer_rootish_any_query
+  if qname_is_root_domain; then
+    # this has to go first because a user typing our domain
+    # into their browser resolves as an ANY query
+    # and qtype_is will always return true for ANY
+    if qtype_is "ANY" && [[ ! -z "${CNAME_RECORDS["${QNAME}"]:-}" ]]; then
+      answer_cname_query
     elif qtype_is "SOA"; then
       answer_soa_query
     elif qtype_is "NS"; then
@@ -184,7 +184,10 @@ while read_query; do
   elif qtype_is "ANY"; then
     extract_subdomain_from_qname
 
-    if subdomain_is_ns; then
+    # see matching condition above
+    if [[ ! -z "${CNAME_RECORDS["${QNAME}"]:-}" ]]; then
+      answer_cname_query
+    elif subdomain_is_ns; then
       answer_subdomain_a_query_for ns
     elif subdomain_is_local_ip; then
       answer_subdomain_a_query_for ip
